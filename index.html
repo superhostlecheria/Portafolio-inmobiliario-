@@ -42,7 +42,7 @@
 
         .main-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
 
-        /* SECCIÓN DE FILTROS */
+        /* FILTROS */
         .filters-container { background: var(--card-dark); border: 1px solid var(--border-color); padding: 20px; border-radius: 20px; margin-bottom: 35px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; align-items: center; }
         .filter-group label { display: block; font-size: 11px; font-weight: 700; color: var(--gold-prestige); margin-bottom: 6px; text-transform: uppercase; }
         .filter-group select, .filter-group input { width: 100%; padding: 10px; background: #09090b; border: 1px solid var(--border-color); border-radius: 10px; color: #fff; font-size: 12px; }
@@ -82,7 +82,6 @@
         .property-features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; color: var(--text-muted); margin-bottom: 15px; background: #09090b; padding: 10px; border-radius: 10px; border: 1px solid var(--border-color); }
         .property-features-grid i { color: var(--gold-prestige); margin-right: 4px; }
 
-        /* Barra de Estadísticas (Vistas y Me Gusta) */
         .card-stats { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 8px 0; margin-bottom: 15px; font-size: 12px; color: var(--text-muted); }
         .stat-item { display: flex; align-items: center; gap: 5px; }
         .like-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 12px; transition: color 0.2s; }
@@ -93,7 +92,8 @@
         .reserve-btn { background: var(--gold-prestige); color: #000; padding: 12px; border-radius: 12px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .reserve-btn:disabled { background: #3f3f46; color: #71717a; cursor: not-allowed; }
 
-        .admin-action-btns { display: flex; gap: 8px; margin-top: 8px; }
+        /* Controles exclusivos de Administrador */
+        .admin-action-btns { display: none; gap: 8px; margin-top: 8px; }
         .edit-btn, .delete-btn { flex: 1; padding: 6px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid var(--border-color); background: #18181b; }
         .edit-btn { color: var(--gold-prestige); }
         .delete-btn { color: #f87171; }
@@ -119,7 +119,8 @@
         .form-group label { display: block; font-size: 11px; font-weight: 700; color: var(--gold-prestige); margin-bottom: 4px; text-transform: uppercase; }
         .form-group input, .form-group select { width: 100%; padding: 10px; background: #09090b; border: 1px solid var(--border-color); border-radius: 10px; color: #fff; font-size: 12px; }
 
-        .admin-section { background-color: var(--card-dark); padding: 60px 20px; border-top: 1px solid var(--border-color); }
+        /* Panel Admin oculto por defecto */
+        .admin-section { display: none; background-color: var(--card-dark); padding: 60px 20px; border-top: 1px solid var(--border-color); }
         .admin-card { background: var(--obsidian); border: 1px solid var(--border-color); padding: 30px; border-radius: 24px; max-width: 600px; margin: 0 auto; }
         .submit-btn { width: 100%; background: var(--gold-prestige); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: 800; cursor: pointer; margin-top: 10px; }
 
@@ -155,7 +156,7 @@
 
     <main class="main-container">
         
-        <!-- SECCIÓN DE FILTROS AVANZADOS -->
+        <!-- FILTROS -->
         <div class="filters-container">
             <div class="filter-group">
                 <label><i class="fa-solid fa-dollar-sign"></i> Rango de Precio / Noche</label>
@@ -198,14 +199,15 @@
                 <h2>Inmuebles Disponibles</h2>
                 <p id="resultCount">Cargando portafolio...</p>
             </div>
-            <a href="#admin" class="nav-btn solo-admin" style="display: none; background: #18181b; color: var(--gold-prestige); border: 1px solid var(--border-color);">
+            <!-- Botón exclusivo para admin -->
+            <a href="#admin" id="btnAgregarAdmin" class="nav-btn" style="display: none; background: #18181b; color: var(--gold-prestige); border: 1px solid var(--border-color);">
                 <i class="fa-solid fa-plus-circle"></i> Añadir Inmueble
             </a>
         </div>
         <div id="propertiesGrid" class="properties-grid"></div>
     </main>
 
-    <!-- SECCIÓN DE SERVICIOS INMOBILIARIOS PARA PROPIETARIOS -->
+    <!-- SECCIÓN PROPIETARIOS -->
     <section class="owners-section">
         <div class="owners-container">
             <div class="hero-badge" style="margin-bottom: 15px;">Servicios Inmobiliarios para Propietarios</div>
@@ -283,8 +285,8 @@
         </div>
     </div>
 
-    <!-- PANEL ADMIN (EXCLUSIVO PARA TI) -->
-    <section class="admin-section solo-admin" id="admin" style="display: none;">
+    <!-- PANEL ADMIN (OCULTO PARA VISITANTES) -->
+    <section class="admin-section" id="admin">
         <div class="admin-card">
             <h3 id="formMainTitle" style="color: #fff; margin-bottom: 20px; text-align: center;">Publicar Propiedad</h3>
             <form id="addPropertyForm" onsubmit="handlePropertySubmit(event)">
@@ -303,6 +305,16 @@
                         <option value="mantenimiento">En Mantenimiento</option>
                     </select>
                 </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                        <label>Fecha Inicio Reserva (Opcional)</label>
+                        <input type="date" id="newReservaInicio">
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha Fin Reserva (Opcional)</label>
+                        <input type="date" id="newReservaFin">
+                    </div>
+                </div>
                 <div class="form-group">
                     <label>Métodos de Pago Aceptados (Separados por coma)</label>
                     <input type="text" id="newPayments" value="Zelle, Cash, USDT, Bolívares" required>
@@ -317,6 +329,7 @@
                 <button type="submit" id="submitFormBtn" class="submit-btn">Guardar en la Nube</button>
                 <button type="button" id="cancelEditBtn" onclick="resetForm()" style="display:none; width:100%; background:#27272a; color:#fff; border:none; padding:10px; border-radius:12px; margin-top:8px; cursor:pointer; font-weight:700;">Cancelar Edición</button>
             </form>
+            <button onclick="cerrarAdmin()" style="width: 100%; background: #3f3f46; color: #fff; border: none; padding: 12px; border-radius: 12px; font-weight: 800; cursor: pointer; margin-top: 15px;"><i class="fa-solid fa-lock"></i> Cerrar Sesión de Administrador</button>
         </div>
     </section>
 
@@ -347,6 +360,28 @@
                 const data = snapshot.val();
                 if (data) {
                     properties = Array.isArray(data) ? data : Object.values(data);
+                    
+                    // Verificación automática de estatus según fechas de reserva actuales
+                    let cambioDetectado = false;
+                    const hoy = new Date().toISOString().split('T')[0];
+                    
+                    properties.forEach(prop => {
+                        if (prop.reservaInicio && prop.reservaFin) {
+                            if (hoy >= prop.reservaInicio && hoy <= prop.reservaFin) {
+                                if (prop.status !== 'reservado') {
+                                    prop.status = 'reservado';
+                                    cambioDetectado = true;
+                                }
+                            } else if (prop.status === 'reservado' && hoy > prop.reservaFin) {
+                                prop.status = 'disponible';
+                                cambioDetectado = true;
+                            }
+                        }
+                    });
+
+                    if (cambioDetectado) {
+                        dbRef.set(properties);
+                    }
                 } else {
                     properties = [{
                         id: Date.now(),
@@ -355,6 +390,8 @@
                         capacity: 6,
                         location: "Lechería",
                         status: "disponible",
+                        reservaInicio: "",
+                        reservaFin: "",
                         payments: ["Zelle", "Cash", "USDT", "Bolívares"],
                         images: ["https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800"],
                         desc: "Muelle privado, planta eléctrica total.",
@@ -409,22 +446,17 @@
             const pagoFiltro = document.getElementById('filtroPago').value;
 
             let filtradas = properties.filter(prop => {
-                // Filtro por Precio
                 if (precioFiltro === '50-100' && (prop.price < 50 || prop.price > 100)) return false;
                 if (precioFiltro === '100-200' && (prop.price < 100 || prop.price > 200)) return false;
                 if (precioFiltro === '200-300' && (prop.price < 200 || prop.price > 300)) return false;
                 if (precioFiltro === '300-plus' && prop.price < 300) return false;
-
-                // Filtro por Huéspedes
                 if (huespedesFiltro !== 'todos' && prop.capacity < parseInt(huespedesFiltro)) return false;
 
-                // Filtro por Métodos de Pago
                 if (pagoFiltro !== 'todos') {
                     const metodos = prop.payments || [];
                     const match = metodos.some(m => m.toLowerCase().includes(pagoFiltro.toLowerCase()));
                     if (!match) return false;
                 }
-
                 return true;
             });
 
@@ -442,6 +474,7 @@
             const grid = document.getElementById('propertiesGrid');
             grid.innerHTML = '';
             let likedInmuebles = JSON.parse(localStorage.getItem('liked_inmuebles') || '{}');
+            const isAdminActive = localStorage.getItem("admin_active") === "true";
 
             list.forEach(prop => {
                 registrarVista(prop.id);
@@ -479,13 +512,7 @@
                 const totalLikes = prop.likes || 0;
                 const paymentsStr = prop.payments ? prop.payments.join(', ') : 'Zelle, Cash, USDT, Bolívares';
 
-                const isAdminActive = localStorage.getItem("admin_active") === "true";
-                let adminButtonsHtml = isAdminActive ? `
-                    <div class="admin-action-btns">
-                        <button onclick="editarPropiedad(${prop.id})" class="edit-btn"><i class="fa-solid fa-pen"></i> Editar</button>
-                        <button onclick="eliminarPropiedad(${prop.id})" class="delete-btn"><i class="fa-solid fa-trash"></i> Borrar</button>
-                    </div>
-                ` : '';
+                let adminButtonsStyle = isAdminActive ? 'display: flex;' : 'display: none;';
 
                 grid.innerHTML += `
                     <div class="property-card" data-id="${prop.id}" data-index="0" data-total="${imgList.length}">
@@ -520,7 +547,10 @@
                             <button onclick="abrirModalReserva(${prop.id})" class="reserve-btn" ${isDisabled ? 'disabled' : ''}>
                                 <i class="fa-brands fa-whatsapp"></i> ${isDisabled ? 'Inmueble No Disponible' : 'Reservar / Cotizar'}
                             </button>
-                            ${adminButtonsHtml}
+                            <div class="admin-action-btns" style="${adminButtonsStyle}">
+                                <button onclick="editarPropiedad(${prop.id})" class="edit-btn"><i class="fa-solid fa-pen"></i> Editar</button>
+                                <button onclick="eliminarPropiedad(${prop.id})" class="delete-btn"><i class="fa-solid fa-trash"></i> Borrar</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -654,8 +684,16 @@
             let capacity = parseInt(document.getElementById('newCapacity').value);
             let location = document.getElementById('newLocation').value;
             let status = document.getElementById('newStatus').value;
+            let reservaInicio = document.getElementById('newReservaInicio').value;
+            let reservaFin = document.getElementById('newReservaFin').value;
             let payments = paymentsInput.split(',').map(s => s.trim()).filter(s => s.length > 0);
             let desc = document.getElementById('newDesc').value;
+
+            // Si hay fechas de reserva asignadas y cubren el día de hoy, forzar estatus reservado
+            const hoy = new Date().toISOString().split('T')[0];
+            if (reservaInicio && reservaFin && hoy >= reservaInicio && hoy <= reservaFin) {
+                status = 'reservado';
+            }
 
             if (editId) {
                 if (currentProp) {
@@ -664,6 +702,8 @@
                     currentProp.capacity = capacity;
                     currentProp.location = location;
                     currentProp.status = status;
+                    currentProp.reservaInicio = reservaInicio;
+                    currentProp.reservaFin = reservaFin;
                     currentProp.payments = payments;
                     currentProp.desc = desc;
                     if (filesInput.files.length > 0 || textInput !== "") {
@@ -680,6 +720,8 @@
                     capacity: capacity,
                     location: location,
                     status: status,
+                    reservaInicio: reservaInicio,
+                    reservaFin: reservaFin,
                     payments: payments,
                     images: imagesList,
                     desc: desc,
@@ -704,6 +746,8 @@
             document.getElementById('newCapacity').value = prop.capacity;
             document.getElementById('newLocation').value = prop.location;
             document.getElementById('newStatus').value = prop.status || "disponible";
+            document.getElementById('newReservaInicio').value = prop.reservaInicio || "";
+            document.getElementById('newReservaFin').value = prop.reservaFin || "";
             document.getElementById('newPayments').value = prop.payments ? prop.payments.join(', ') : "Zelle, Cash, USDT, Bolívares";
             
             let imgLinks = "";
@@ -748,15 +792,19 @@
             }
         }
 
+        function cerrarAdmin() {
+            localStorage.removeItem("admin_active");
+            verificarEstadoAdmin();
+            aplicarFiltros();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            alert("Has cerrado sesión como administrador.");
+        }
+
         function verificarEstadoAdmin() {
             const activo = localStorage.getItem("admin_active") === "true";
-            document.querySelectorAll('.solo-admin').forEach(el => {
-                el.style.display = activo ? (el.tagName === 'SECTION' ? 'block' : 'flex') : 'none';
-            });
+            document.getElementById('admin').style.display = activo ? 'block' : 'none';
+            document.getElementById('btnAgregarAdmin').style.display = activo ? 'flex' : 'none';
         }
     </script>
 </body>
 </html>
-
-                
-                                    
