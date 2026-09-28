@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -41,7 +40,16 @@
         .hero h1 { font-size: 32px; font-weight: 900; margin-bottom: 15px; color: #fff; }
         .hero p { font-size: 14px; color: var(--text-muted); max-width: 600px; margin: 0 auto 30px auto; }
 
-        .main-container { max-width: 1200px; margin: 0 auto; padding: 50px 20px; }
+        .main-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+
+        /* SECCIÓN DE FILTROS */
+        .filters-container { background: var(--card-dark); border: 1px solid var(--border-color); padding: 20px; border-radius: 20px; margin-bottom: 35px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; align-items: center; }
+        .filter-group label { display: block; font-size: 11px; font-weight: 700; color: var(--gold-prestige); margin-bottom: 6px; text-transform: uppercase; }
+        .filter-group select, .filter-group input { width: 100%; padding: 10px; background: #09090b; border: 1px solid var(--border-color); border-radius: 10px; color: #fff; font-size: 12px; }
+        .filter-buttons { display: flex; gap: 8px; align-items: flex-end; }
+        .filter-btn { flex: 1; background: var(--gold-prestige); color: #000; border: none; padding: 10px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 12px; }
+        .reset-btn { flex: 1; background: #27272a; color: #fff; border: none; padding: 10px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 12px; }
+
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; }
         .properties-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
 
@@ -56,7 +64,6 @@
         .carousel-btn:hover { background: var(--gold-prestige); color: #000; }
         .carousel-prev { left: 10px; }
         .carousel-next { right: 10px; }
-
         .carousel-counter { position: absolute; bottom: 12px; right: 12px; background: rgba(0,0,0,0.75); color: #fff; padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; z-index: 5; border: 1px solid var(--border-color); }
 
         .status-badge { position: absolute; top: 15px; left: 15px; padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; z-index: 5; }
@@ -71,6 +78,9 @@
         .card-location { font-size: 11px; color: var(--gold-prestige); font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
         .card-title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 10px; }
         .card-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 15px; }
+
+        .property-features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; color: var(--text-muted); margin-bottom: 15px; background: #09090b; padding: 10px; border-radius: 10px; border: 1px solid var(--border-color); }
+        .property-features-grid i { color: var(--gold-prestige); margin-right: 4px; }
 
         /* Barra de Estadísticas (Vistas y Me Gusta) */
         .card-stats { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 8px 0; margin-bottom: 15px; font-size: 12px; color: var(--text-muted); }
@@ -128,7 +138,7 @@
                 </div>
             </div>
             <div class="nav-right">
-                <select id="currencySelector" class="currency-select" onchange="renderProperties(properties)">
+                <select id="currencySelector" class="currency-select" onchange="aplicarFiltros()">
                     <option value="USD">USD ($)</option>
                     <option value="VES">VES (Bs.)</option>
                 </select>
@@ -144,6 +154,45 @@
     </section>
 
     <main class="main-container">
+        
+        <!-- SECCIÓN DE FILTROS AVANZADOS -->
+        <div class="filters-container">
+            <div class="filter-group">
+                <label><i class="fa-solid fa-dollar-sign"></i> Rango de Precio / Noche</label>
+                <select id="filtroPrecio" onchange="aplicarFiltros()">
+                    <option value="todos">Todos los precios</option>
+                    <option value="50-100">$50 - $100</option>
+                    <option value="100-200">$100 - $200</option>
+                    <option value="200-300">$200 - $300</option>
+                    <option value="300-plus">$300 o más ($300+)</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label><i class="fa-solid fa-users"></i> Huéspedes Mínimos</label>
+                <select id="filtroHuespedes" onchange="aplicarFiltros()">
+                    <option value="todos">Cualquier capacidad</option>
+                    <option value="2">2+ Personas</option>
+                    <option value="4">4+ Personas</option>
+                    <option value="6">6+ Personas</option>
+                    <option value="8">8+ Personas</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label><i class="fa-solid fa-wallet"></i> Método de Pago</label>
+                <select id="filtroPago" onchange="aplicarFiltros()">
+                    <option value="todos">Cualquier método</option>
+                    <option value="Zelle">Zelle</option>
+                    <option value="Cash">Cash (Efectivo)</option>
+                    <option value="USDT">USDT (Cripto)</option>
+                    <option value="Bolívares">Bolívares (Transferencia/Pago Móvil)</option>
+                </select>
+            </div>
+            <div class="filter-buttons">
+                <button class="reset-btn" onclick="limpiarFiltros()">Limpiar</button>
+                <button class="filter-btn" onclick="aplicarFiltros()"><i class="fa-solid fa-filter"></i> Filtrar</button>
+            </div>
+        </div>
+
         <div class="section-header">
             <div>
                 <h2>Inmuebles Disponibles</h2>
@@ -214,6 +263,15 @@
                         <input type="number" id="mascotasCount" value="0" min="0">
                     </div>
                 </div>
+                <div class="form-group">
+                    <label>Método de Pago Preferido</label>
+                    <select id="metodoPagoReserva">
+                        <option value="Zelle">Zelle</option>
+                        <option value="Cash">Cash (Efectivo)</option>
+                        <option value="USDT">USDT (Cripto)</option>
+                        <option value="Bolívares">Bolívares</option>
+                    </select>
+                </div>
                 <div id="resumenCotizacion" style="background: #18181b; padding: 12px; border-radius: 10px; margin: 15px 0; font-size: 13px; color: var(--gold-prestige); font-weight: bold; text-align: center;">
                     Selecciona las fechas
                 </div>
@@ -244,6 +302,10 @@
                         <option value="reservado">Reservado (Bloqueado)</option>
                         <option value="mantenimiento">En Mantenimiento</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label>Métodos de Pago Aceptados (Separados por coma)</label>
+                    <input type="text" id="newPayments" value="Zelle, Cash, USDT, Bolívares" required>
                 </div>
                 <div class="form-group">
                     <label>Fotos del Inmueble (Selecciona hasta 25 fotos)</label>
@@ -293,6 +355,7 @@
                         capacity: 6,
                         location: "Lechería",
                         status: "disponible",
+                        payments: ["Zelle", "Cash", "USDT", "Bolívares"],
                         images: ["https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800"],
                         desc: "Muelle privado, planta eléctrica total.",
                         views: 0,
@@ -300,7 +363,7 @@
                     }];
                     dbRef.set(properties);
                 }
-                renderProperties(properties);
+                aplicarFiltros();
                 verificarEstadoAdmin();
             });
         });
@@ -338,6 +401,41 @@
             }
             localStorage.setItem('liked_inmuebles', JSON.stringify(likedInmuebles));
             dbRef.set(properties);
+        }
+
+        function aplicarFiltros() {
+            const precioFiltro = document.getElementById('filtroPrecio').value;
+            const huespedesFiltro = document.getElementById('filtroHuespedes').value;
+            const pagoFiltro = document.getElementById('filtroPago').value;
+
+            let filtradas = properties.filter(prop => {
+                // Filtro por Precio
+                if (precioFiltro === '50-100' && (prop.price < 50 || prop.price > 100)) return false;
+                if (precioFiltro === '100-200' && (prop.price < 100 || prop.price > 200)) return false;
+                if (precioFiltro === '200-300' && (prop.price < 200 || prop.price > 300)) return false;
+                if (precioFiltro === '300-plus' && prop.price < 300) return false;
+
+                // Filtro por Huéspedes
+                if (huespedesFiltro !== 'todos' && prop.capacity < parseInt(huespedesFiltro)) return false;
+
+                // Filtro por Métodos de Pago
+                if (pagoFiltro !== 'todos') {
+                    const metodos = prop.payments || [];
+                    const match = metodos.some(m => m.toLowerCase().includes(pagoFiltro.toLowerCase()));
+                    if (!match) return false;
+                }
+
+                return true;
+            });
+
+            renderProperties(filtradas);
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('filtroPrecio').value = 'todos';
+            document.getElementById('filtroHuespedes').value = 'todos';
+            document.getElementById('filtroPago').value = 'todos';
+            aplicarFiltros();
         }
 
         function renderProperties(list) {
@@ -379,6 +477,7 @@
                 const heartIcon = likedInmuebles[prop.id] ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
                 const totalViews = prop.views || 0;
                 const totalLikes = prop.likes || 0;
+                const paymentsStr = prop.payments ? prop.payments.join(', ') : 'Zelle, Cash, USDT, Bolívares';
 
                 const isAdminActive = localStorage.getItem("admin_active") === "true";
                 let adminButtonsHtml = isAdminActive ? `
@@ -402,7 +501,11 @@
                             <div class="card-location"><i class="fa-solid fa-location-dot"></i> ${prop.location}</div>
                             <h3 class="card-title">${prop.title}</h3>
                             <p class="card-desc">${prop.desc}</p>
-                            <div style="font-size:12px; color:var(--text-muted); margin-bottom: 12px;"><i class="fa-solid fa-users"></i> Capacidad: ${prop.capacity} personas</div>
+                            
+                            <div class="property-features-grid">
+                                <div><i class="fa-solid fa-users"></i> ${prop.capacity} Personas</div>
+                                <div><i class="fa-solid fa-wallet"></i> ${paymentsStr}</div>
+                            </div>
                             
                             <div class="card-stats">
                                 <div class="stat-item">
@@ -422,7 +525,7 @@
                     </div>
                 `;
             });
-            document.getElementById('resultCount').innerText = `${list.length} inmuebles en portafolio`;
+            document.getElementById('resultCount').innerText = `${list.length} inmuebles encontrados`;
             verificarEstadoAdmin();
         }
 
@@ -478,13 +581,14 @@
             const adultos = document.getElementById('adultosCount').value;
             const ninos = document.getElementById('ninosCount').value;
             const mascotas = document.getElementById('mascotasCount').value;
+            const metodoPago = document.getElementById('metodoPagoReserva').value;
 
             const checkInDateObj = new Date(checkIn);
             const checkOutDateObj = new Date(checkOut);
             const noches = Math.ceil((checkOutDateObj - checkInDateObj) / (1000 * 60 * 60 * 24));
             const totalUSD = noches * propiedadSeleccionada.price;
 
-            let mensaje = `Hola, deseo cotizar / reservar "${propiedadSeleccionada.title}".\n📅 Entrada: ${checkIn}\n📅 Salida: ${checkOut} (${noches} noches).\n👥 Huéspedes: ${adultos} Adultos, ${ninos} Niños, ${mascotas} Mascotas.\n💰 Total Est.: $${totalUSD} USD.`;
+            let mensaje = `Hola, deseo cotizar / reservar "${propiedadSeleccionada.title}".\n📅 Entrada: ${checkIn}\n📅 Salida: ${checkOut} (${noches} noches).\n👥 Huéspedes: ${adultos} Adultos, ${ninos} Niños, ${mascotas} Mascotas.\n💳 Método de Pago: ${metodoPago}\n💰 Total Est.: $${totalUSD} USD.`;
             window.open(`https://wa.me/584248901954?text=${encodeURIComponent(mensaje)}`, '_blank');
             cerrarModalReserva();
         }
@@ -524,6 +628,7 @@
             const editId = document.getElementById('editPropertyId').value;
             const filesInput = document.getElementById('newImageFiles');
             const textInput = document.getElementById('newImageText').value.trim();
+            const paymentsInput = document.getElementById('newPayments').value;
 
             let imagesList = [];
             let currentProp = editId ? properties.find(p => p.id == editId) : null;
@@ -549,6 +654,7 @@
             let capacity = parseInt(document.getElementById('newCapacity').value);
             let location = document.getElementById('newLocation').value;
             let status = document.getElementById('newStatus').value;
+            let payments = paymentsInput.split(',').map(s => s.trim()).filter(s => s.length > 0);
             let desc = document.getElementById('newDesc').value;
 
             if (editId) {
@@ -558,6 +664,7 @@
                     currentProp.capacity = capacity;
                     currentProp.location = location;
                     currentProp.status = status;
+                    currentProp.payments = payments;
                     currentProp.desc = desc;
                     if (filesInput.files.length > 0 || textInput !== "") {
                         currentProp.images = imagesList;
@@ -573,6 +680,7 @@
                     capacity: capacity,
                     location: location,
                     status: status,
+                    payments: payments,
                     images: imagesList,
                     desc: desc,
                     views: 0,
@@ -596,6 +704,7 @@
             document.getElementById('newCapacity').value = prop.capacity;
             document.getElementById('newLocation').value = prop.location;
             document.getElementById('newStatus').value = prop.status || "disponible";
+            document.getElementById('newPayments').value = prop.payments ? prop.payments.join(', ') : "Zelle, Cash, USDT, Bolívares";
             
             let imgLinks = "";
             if (prop.images && Array.isArray(prop.images)) {
@@ -632,7 +741,7 @@
             let pass = prompt("Contraseña de administrador:");
             if (pass === "zegnen") {
                 localStorage.setItem("admin_active", "true");
-                renderProperties(properties);
+                aplicarFiltros();
                 alert("Modo Administrador Activo");
             } else if (pass !== null) {
                 alert("Contraseña incorrecta.");
@@ -648,3 +757,6 @@
     </script>
 </body>
 </html>
+
+                
+                                    
