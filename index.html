@@ -57,7 +57,7 @@
         
         .card-image-container { position: relative; height: 220px; background: #18181b; overflow: hidden; width: 100%; }
         .carousel-track { display: flex; height: 100%; width: 100%; transition: transform 0.3s ease-in-out; will-change: transform; }
-        .carousel-slide { min-width: 100%; width: 100%; height: 100%; flex: 0 0 100%; }
+        .carousel-slide { min-width: 100%; width: 100%; height: 100%; flex: 0 0 100%; cursor: zoom-in; }
         .carousel-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
         
         .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0, 0, 0, 0.6); color: #fff; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 5; font-size: 14px; transition: background 0.2s; }
@@ -118,6 +118,13 @@
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 11px; font-weight: 700; color: var(--gold-prestige); margin-bottom: 4px; text-transform: uppercase; }
         .form-group input, .form-group select { width: 100%; padding: 10px; background: #09090b; border: 1px solid var(--border-color); border-radius: 10px; color: #fff; font-size: 12px; }
+
+        /* Modal Visor de Imagen Completa (Zoom) */
+        #imageModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); justify-content: center; align-items: center; z-index: 3000; padding: 20px; }
+        .image-modal-content { position: relative; max-width: 90%; max-height: 90%; display: flex; justify-content: center; align-items: center; }
+        .image-modal-content img { max-width: 100%; max-height: 85vh; object-fit: contain; border-radius: 12px; border: 1px solid var(--border-color); }
+        .close-image-modal { position: absolute; top: -45px; right: 0; background: rgba(255,255,255,0.1); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+        .close-image-modal:hover { background: var(--gold-prestige); color: #000; }
 
         /* Panel Admin oculto por defecto */
         .admin-section { display: none; background-color: var(--card-dark); padding: 60px 20px; border-top: 1px solid var(--border-color); }
@@ -285,6 +292,14 @@
         </div>
     </div>
 
+    <!-- MODAL VISOR DE IMAGEN COMPLETA (ZOOM) -->
+    <div id="imageModal" onclick="cerrarVisorImagen()">
+        <div class="image-modal-content" onclick="event.stopPropagation()">
+            <button class="close-image-modal" onclick="cerrarVisorImagen()"><i class="fa-solid fa-xmark"></i></button>
+            <img id="modalFullImage" src="" alt="Vista completa">
+        </div>
+    </div>
+
     <!-- PANEL ADMIN (OCULTO PARA VISITANTES) -->
     <section class="admin-section" id="admin">
         <div class="admin-card">
@@ -361,7 +376,6 @@
                 if (data) {
                     properties = Array.isArray(data) ? data : Object.values(data);
                     
-                    // Verificación automática de estatus según fechas de reserva actuales
                     let cambioDetectado = false;
                     const hoy = new Date().toISOString().split('T')[0];
                     
@@ -494,7 +508,7 @@
 
                 let slidesHtml = '';
                 imgList.forEach((img, idx) => {
-                    slidesHtml += `<div class="carousel-slide"><img src="${img}" alt="Foto ${idx+1}" onerror="this.src='https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800'"></div>`;
+                    slidesHtml += `<div class="carousel-slide" onclick="abrirVisorImagen('${img}')"><img src="${img}" alt="Foto ${idx+1}" onerror="this.src='https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800'"></div>`;
                 });
 
                 let arrowsHtml = '';
@@ -578,6 +592,16 @@
             if (counter) {
                 counter.innerText = `${currentIndex + 1} / ${total}`;
             }
+        }
+
+        /* Funciones para el Visor de Imágenes Flotante */
+        function abrirVisorImagen(url) {
+            document.getElementById('modalFullImage').src = url;
+            document.getElementById('imageModal').style.display = 'flex';
+        }
+
+        function cerrarVisorImagen() {
+            document.getElementById('imageModal').style.display = 'none';
         }
 
         function abrirModalReserva(id) {
@@ -689,7 +713,6 @@
             let payments = paymentsInput.split(',').map(s => s.trim()).filter(s => s.length > 0);
             let desc = document.getElementById('newDesc').value;
 
-            // Si hay fechas de reserva asignadas y cubren el día de hoy, forzar estatus reservado
             const hoy = new Date().toISOString().split('T')[0];
             if (reservaInicio && reservaFin && hoy >= reservaInicio && hoy <= reservaFin) {
                 status = 'reservado';
