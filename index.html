@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+     <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -45,15 +45,26 @@
         .properties-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
 
         .property-card { background-color: var(--card-dark); border: 1px solid var(--border-color); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
-        .card-image-container { position: relative; height: 220px; background: #18181b; }
-        .card-image-container img { width: 100%; height: 100%; object-fit: cover; }
         
-        .status-badge { position: absolute; top: 15px; left: 15px; padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; z-index: 2; }
+        /* Carrusel CSS */
+        .card-image-container { position: relative; height: 220px; background: #18181b; overflow: hidden; }
+        .carousel-track { display: flex; height: 100%; transition: transform 0.3s ease-in-out; width: 100%; }
+        .carousel-slide { min-width: 100%; height: 100%; flex-shrink: 0; }
+        .carousel-slide img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0, 0, 0, 0.6); color: #fff; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 5; font-size: 14px; transition: background 0.2s; }
+        .carousel-btn:hover { background: var(--gold-prestige); color: #000; }
+        .carousel-prev { left: 10px; }
+        .carousel-next { right: 10px; }
+
+        .carousel-counter { position: absolute; bottom: 12px; right: 12px; background: rgba(0,0,0,0.75); color: #fff; padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; z-index: 5; border: 1px solid var(--border-color); }
+
+        .status-badge { position: absolute; top: 15px; left: 15px; padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; z-index: 5; }
         .status-disponible { background: rgba(16, 185, 129, 0.9); color: #fff; }
         .status-reservado { background: rgba(239, 68, 68, 0.9); color: #fff; }
         .status-mantenimiento { background: rgba(245, 158, 11, 0.9); color: #000; }
 
-        .price-tag { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.85); border: 1px solid var(--border-color); color: var(--gold-prestige); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 800; z-index: 2; }
+        .price-tag { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.85); border: 1px solid var(--border-color); color: var(--gold-prestige); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 800; z-index: 5; }
         .price-tag span { font-size: 10px; font-weight: 400; color: var(--text-muted); }
 
         .card-body { padding: 20px; }
@@ -184,9 +195,10 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Foto de la Propiedad (Subir desde galería o Enlace URL)</label>
-                    <input type="file" id="newImageFile" accept="image/*" style="margin-bottom: 8px;">
-                    <input type="text" id="newImageText" placeholder="O pega aquí el enlace URL de la foto">
+                    <label>Fotos del Inmueble (Selecciona hasta 25 fotos)</label>
+                    <input type="file" id="newImageFiles" accept="image/*" multiple style="margin-bottom: 8px;">
+                    <small style="color: var(--text-muted); display: block; margin-bottom: 6px;">O pega enlaces de fotos separados por comas:</small>
+                    <input type="text" id="newImageText" placeholder="https://..., https://...">
                 </div>
                 <div class="form-group"><label>Descripción</label><input type="text" id="newDesc" required></div>
                 <button type="submit" id="submitFormBtn" class="submit-btn">Guardar en la Nube</button>
@@ -230,7 +242,7 @@
                         capacity: 6,
                         location: "Lechería",
                         status: "disponible",
-                        image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800",
+                        images: ["https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800"],
                         desc: "Muelle privado, planta eléctrica total."
                     }];
                     dbRef.set(properties);
@@ -253,18 +265,38 @@
                 let badgeText = prop.status ? prop.status.toUpperCase() : 'DISPONIBLE';
                 let isDisabled = prop.status === 'reservado' || prop.status === 'mantenimiento';
 
-                let imgSrc = "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800";
-                if (prop.image && prop.image.trim() !== "") {
-                    imgSrc = prop.image;
-                } else if (prop.images && prop.images.length > 0) {
-                    imgSrc = prop.images[0];
+                // Obtener listado de imágenes (soporta matriz, campo único anterior o valor por defecto)
+                let imgList = [];
+                if (prop.images && Array.isArray(prop.images) && prop.images.length > 0) {
+                    imgList = prop.images;
+                } else if (prop.image) {
+                    imgList = [prop.image];
+                } else {
+                    imgList = ["https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800"];
+                }
+
+                let slidesHtml = '';
+                imgList.forEach((img, idx) => {
+                    slidesHtml += `<div class="carousel-slide"><img src="${img}" alt="Foto ${idx+1}" onerror="this.src='https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800'"></div>`;
+                });
+
+                let arrowsHtml = '';
+                if (imgList.length > 1) {
+                    arrowsHtml = `
+                        <button class="carousel-btn carousel-prev" onclick="moverCarrusel(${prop.id}, -1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button class="carousel-btn carousel-next" onclick="moverCarrusel(${prop.id}, 1)"><i class="fa-solid fa-chevron-right"></i></button>
+                        <div class="carousel-counter" id="counter-${prop.id}">1 / ${imgList.length}</div>
+                    `;
                 }
 
                 grid.innerHTML += `
-                    <div class="property-card">
+                    <div class="property-card" data-id="${prop.id}" data-index="0" data-total="${imgList.length}">
                         <div class="card-image-container">
                             <span class="status-badge ${badgeClass}">${badgeText}</span>
-                            <img src="${imgSrc}" alt="${prop.title}" onerror="this.src='https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800'">
+                            <div class="carousel-track" id="track-${prop.id}">
+                                ${slidesHtml}
+                            </div>
+                            ${arrowsHtml}
                             <div class="price-tag">${formatPrice(prop.price)} <span>/ noche</span></div>
                         </div>
                         <div class="card-body">
@@ -287,6 +319,27 @@
             });
             document.getElementById('resultCount').innerText = `${list.length} inmuebles en portafolio`;
             verificarEstadoAdmin();
+        }
+
+        function moverCarrusel(propId, direccion) {
+            const card = document.querySelector(`.property-card[data-id="${propId}"]`);
+            if (!card) return;
+
+            let currentIndex = parseInt(card.getAttribute('data-index'));
+            let total = parseInt(card.getAttribute('data-total'));
+
+            currentIndex += direccion;
+            if (currentIndex < 0) currentIndex = total - 1;
+            if (currentIndex >= total) currentIndex = 0;
+
+            card.setAttribute('data-index', currentIndex);
+            const track = document.getElementById(`track-${propId}`);
+            track.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+            const counter = document.getElementById(`counter-${propId}`);
+            if (counter) {
+                counter.innerText = `${currentIndex + 1} / ${total}`;
+            }
         }
 
         function abrirModalReserva(id) {
@@ -331,7 +384,7 @@
             cerrarModalReserva();
         }
 
-        // Función para comprimir la imagen de la galería antes de subirla
+        // Compresor de imágenes optimizado para múltiples archivos (máximo 25)
         function comprimirImagen(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -347,24 +400,16 @@
                         let height = img.height;
 
                         if (width > height) {
-                            if (width > MAX_WIDTH) {
-                                height *= MAX_WIDTH / width;
-                                width = MAX_WIDTH;
-                            }
+                            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
                         } else {
-                            if (height > MAX_HEIGHT) {
-                                width *= MAX_HEIGHT / height;
-                                height = MAX_HEIGHT;
-                            }
+                            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
                         }
 
                         canvas.width = width;
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        
-                        // Comprimir a JPEG con calidad 0.7 para que pese poco y suba perfecto a Firebase
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                        resolve(canvas.toDataURL('image/jpeg', 0.65));
                     };
                 };
             });
@@ -373,19 +418,31 @@
         async function handlePropertySubmit(event) {
             event.preventDefault();
             const editId = document.getElementById('editPropertyId').value;
-            const fileInput = document.getElementById('newImageFile');
+            const filesInput = document.getElementById('newImageFiles');
             const textInput = document.getElementById('newImageText').value.trim();
 
-            let imageUrl = "";
+            let imagesList = [];
             let currentProp = editId ? properties.find(p => p.id == editId) : null;
 
-            if (textInput !== "") {
-                imageUrl = textInput;
-            } else if (fileInput.files.length > 0) {
-                // Comprimimos la foto seleccionada de la galería del teléfono
-                imageUrl = await comprimirImagen(fileInput.files[0]);
-            } else if (currentProp) {
-                imageUrl = currentProp.image || "";
+            // Procesar si se subieron archivos desde la galería (máximo 25)
+            if (filesInput.files.length > 0) {
+                const archivosAProcesar = Array.from(filesInput.files).slice(0, 25);
+                for (let file of archivosAProcesar) {
+                    let compressed = await comprimirImagen(file);
+                    imagesList.push(compressed);
+                }
+            } 
+            // Procesar si se pegaron enlaces separados por comas
+            else if (textInput !== "") {
+                imagesList = textInput.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            } 
+            // Mantener las fotos anteriores si no se seleccionaron nuevas
+            else if (currentProp) {
+                imagesList = currentProp.images || (currentProp.image ? [currentProp.image] : []);
+            }
+
+            if (imagesList.length === 0) {
+                imagesList = ["https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800"];
             }
 
             let title = document.getElementById('newTitle').value;
@@ -403,8 +460,9 @@
                     currentProp.location = location;
                     currentProp.status = status;
                     currentProp.desc = desc;
-                    if (imageUrl !== "") {
-                        currentProp.image = imageUrl;
+                    if (filesInput.files.length > 0 || textInput !== "") {
+                        currentProp.images = imagesList;
+                        delete currentProp.image; // Limpiar formato antiguo
                     }
                 }
                 alert("¡Inmueble actualizado en la nube con éxito!");
@@ -416,7 +474,7 @@
                     capacity: capacity,
                     location: location,
                     status: status,
-                    image: imageUrl !== "" ? imageUrl : "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800",
+                    images: imagesList,
                     desc: desc
                 };
                 properties.unshift(nuevaProp);
@@ -437,7 +495,14 @@
             document.getElementById('newCapacity').value = prop.capacity;
             document.getElementById('newLocation').value = prop.location;
             document.getElementById('newStatus').value = prop.status || "disponible";
-            document.getElementById('newImageText').value = prop.image && prop.image.startsWith('http') ? prop.image : "";
+            
+            let imgLinks = "";
+            if (prop.images && Array.isArray(prop.images)) {
+                imgLinks = prop.images.filter(img => img.startsWith('http')).join(', ');
+            } else if (prop.image && prop.image.startsWith('http')) {
+                imgLinks = prop.image;
+            }
+            document.getElementById('newImageText').value = imgLinks;
             document.getElementById('newDesc').value = prop.desc;
 
             document.getElementById('formMainTitle').innerText = "Editar Propiedad Existente";
@@ -482,3 +547,4 @@
     </script>
 </body>
 </html>
+    
