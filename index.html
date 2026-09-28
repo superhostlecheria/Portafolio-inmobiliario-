@@ -45,7 +45,7 @@
         .properties-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
 
         .property-card { background-color: var(--card-dark); border: 1px solid var(--border-color); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
-        .card-image-container { position: relative; height: 220px; }
+        .card-image-container { position: relative; height: 220px; background: #18181b; }
         .card-image-container img { width: 100%; height: 100%; object-fit: cover; }
         
         .status-badge { position: absolute; top: 15px; left: 15px; padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; z-index: 2; }
@@ -125,12 +125,11 @@
         <div id="propertiesGrid" class="properties-grid"></div>
     </main>
 
-    <!-- MODAL DE RESERVA CON CALENDARIO Y HUÉSPEDES -->
+    <!-- MODAL DE RESERVA -->
     <div id="bookingModal">
         <div class="booking-card">
             <h3 id="modalPropertyTitle">Solicitar Reserva / Cotización</h3>
             <form onsubmit="procesarReserva(event)">
-                <input type="hidden" id="modalPropId">
                 <div class="form-group">
                     <label>Fecha de Entrada (Check-in)</label>
                     <input type="date" id="checkInDate" required onchange="calcularTotalReserva()">
@@ -184,7 +183,11 @@
                         <option value="mantenimiento">En Mantenimiento</option>
                     </select>
                 </div>
-                <div class="form-group"><label>URL de Imagen</label><input type="text" id="newImage" required placeholder="https://..."></div>
+                <div class="form-group">
+                    <label>Foto de la Propiedad (Subir desde dispositivo o Enlace URL)</label>
+                    <input type="file" id="newImageFile" accept="image/*" style="margin-bottom: 8px;">
+                    <input type="text" id="newImageText" placeholder="O pega aquí el enlace URL de la foto">
+                </div>
                 <div class="form-group"><label>Descripción</label><input type="text" id="newDesc" required></div>
                 <button type="submit" id="submitFormBtn" class="submit-btn">Guardar en la Nube</button>
                 <button type="button" id="cancelEditBtn" onclick="resetForm()" style="display:none; width:100%; background:#27272a; color:#fff; border:none; padding:10px; border-radius:12px; margin-top:8px; cursor:pointer; font-weight:700;">Cancelar Edición</button>
@@ -247,14 +250,22 @@
             grid.innerHTML = '';
             list.forEach(prop => {
                 let badgeClass = prop.status === 'reservado' ? 'status-reservado' : (prop.status === 'mantenimiento' ? 'status-mantenimiento' : 'status-disponible');
-                let badgeText = prop.status.toUpperCase();
-                let isDisabled = prop.status !== 'disponible';
+                let badgeText = prop.status ? prop.status.toUpperCase() : 'DISPONIBLE';
+                let isDisabled = prop.status === 'reservado' || prop.status === 'mantenimiento';
+
+                // Manejar tanto formato antiguo de imágenes como formato nuevo de texto/archivo
+                let imgSrc = "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800";
+                if (prop.image) {
+                    imgSrc = prop.image;
+                } else if (prop.images && prop.images.length > 0) {
+                    imgSrc = prop.images[0];
+                }
 
                 grid.innerHTML += `
                     <div class="property-card">
                         <div class="card-image-container">
                             <span class="status-badge ${badgeClass}">${badgeText}</span>
-                            <img src="${prop.image}" alt="${prop.title}">
+                            <img src="${imgSrc}" alt="${prop.title}" onerror="this.src='https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800'">
                             <div class="price-tag">${formatPrice(prop.price)} <span>/ noche</span></div>
                         </div>
                         <div class="card-body">
@@ -316,22 +327,34 @@
             const noches = Math.ceil((checkOutDateObj - checkInDateObj) / (1000 * 60 * 60 * 24));
             const totalUSD = noches * propiedadSeleccionada.price;
 
-            // NOTA: Ya NO cambia el estatus automáticamente. Solo arma el mensaje para WhatsApp.
             let mensaje = `Hola, deseo cotizar / reservar "${propiedadSeleccionada.title}".\n📅 Entrada: ${checkIn}\n📅 Salida: ${checkOut} (${noches} noches).\n👥 Huéspedes: ${adultos} Adultos, ${ninos} Niños, ${mascotas} Mascotas.\n💰 Total Est.: $${totalUSD} USD.`;
             window.open(`https://wa.me/584248901954?text=${encodeURIComponent(mensaje)}`, '_blank');
             cerrarModalReserva();
         }
 
-        function handlePropertySubmit(event) {
+        async function handlePropertySubmit(event) {
             event.preventDefault();
             const editId = document.getElementById('editPropertyId').value;
+            const fileInput = document.getElementById('newImageFile');
+            const textInput = document.getElementById('newImageText').value.trim();
+
+            let imageUrl = "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800";
+
+            if (textInput) {
+                imageUrl = textInput;
+            } else if (fileInput.files.length > 0) {
+                imageUrl = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(fileInput.files[0]);
+                });
+            }
 
             let title = document.getElementById('newTitle').value;
             let price = parseFloat(document.getElementById('newPrice').value);
             let capacity = parseInt(document.getElementById('newCapacity').value);
             let location = document.getElementById('newLocation').value;
             let status = document.getElementById('newStatus').value;
-            let image = document.getElementById('newImage').value;
             let desc = document.getElementById('newDesc').value;
 
             if (editId) {
@@ -342,8 +365,10 @@
                     prop.capacity = capacity;
                     prop.location = location;
                     prop.status = status;
-                    prop.image = image;
                     prop.desc = desc;
+                    if (textInput || fileInput.files.length > 0) {
+                        prop.image = imageUrl;
+                    }
                 }
                 alert("¡Inmueble actualizado en la nube con éxito!");
             } else {
@@ -354,7 +379,7 @@
                     capacity: capacity,
                     location: location,
                     status: status,
-                    image: image,
+                    image: imageUrl,
                     desc: desc
                 };
                 properties.unshift(nuevaProp);
@@ -375,7 +400,7 @@
             document.getElementById('newCapacity').value = prop.capacity;
             document.getElementById('newLocation').value = prop.location;
             document.getElementById('newStatus').value = prop.status || "disponible";
-            document.getElementById('newImage').value = prop.image;
+            document.getElementById('newImageText').value = prop.image || "";
             document.getElementById('newDesc').value = prop.desc;
 
             document.getElementById('formMainTitle').innerText = "Editar Propiedad Existente";
@@ -389,7 +414,6 @@
             document.getElementById('addPropertyForm').reset();
             document.getElementById('editPropertyId').value = "";
             document.getElementById('formMainTitle').innerText = "Publicar Propiedad";
-            document.getElementById('submitFormBtn').innerText = "Guardar在新 la Nube";
             document.getElementById('submitFormBtn').innerText = "Guardar en la Nube";
             document.getElementById('cancelEditBtn').style.display = "none";
         }
@@ -421,3 +445,5 @@
     </script>
 </body>
 </html>
+
+
