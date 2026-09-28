@@ -65,6 +65,11 @@
         .reserve-btn { background: var(--gold-prestige); color: #000; padding: 12px; border-radius: 12px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .reserve-btn:disabled { background: #3f3f46; color: #71717a; cursor: not-allowed; }
 
+        .admin-action-btns { display: flex; gap: 8px; margin-top: 8px; }
+        .edit-btn, .delete-btn { flex: 1; padding: 6px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid var(--border-color); background: #18181b; }
+        .edit-btn { color: var(--gold-prestige); }
+        .delete-btn { color: #f87171; }
+
         /* Modal de Reserva Avanzada */
         #bookingModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 2000; padding: 15px; }
         .booking-card { background: var(--card-dark); border: 1px solid var(--border-color); padding: 25px; border-radius: 20px; width: 100%; max-width: 450px; }
@@ -123,7 +128,7 @@
     <!-- MODAL DE RESERVA CON CALENDARIO Y HUÉSPEDES -->
     <div id="bookingModal">
         <div class="booking-card">
-            <h3 id="modalPropertyTitle">Solicitar Reserva</h3>
+            <h3 id="modalPropertyTitle">Solicitar Reserva / Cotización</h3>
             <form onsubmit="procesarReserva(event)">
                 <input type="hidden" id="modalPropId">
                 <div class="form-group">
@@ -153,7 +158,7 @@
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" onclick="cerrarModalReserva()" style="width: 100%; background: #27272a; color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer;">Cancelar</button>
-                    <button type="submit" class="reserve-btn" style="width: 100%;">Confirmar por WhatsApp</button>
+                    <button type="submit" class="reserve-btn" style="width: 100%;">Enviar Cotización WhatsApp</button>
                 </div>
             </form>
         </div>
@@ -162,8 +167,9 @@
     <!-- PANEL ADMIN -->
     <section class="admin-section solo-admin" id="admin" style="display: none;">
         <div class="admin-card">
-            <h3 style="color: #fff; margin-bottom: 20px; text-align: center;">Publicar / Administrar Propiedad</h3>
+            <h3 id="formMainTitle" style="color: #fff; margin-bottom: 20px; text-align: center;">Publicar Propiedad</h3>
             <form id="addPropertyForm" onsubmit="handlePropertySubmit(event)">
+                <input type="hidden" id="editPropertyId">
                 <div class="form-group"><label>Título</label><input type="text" id="newTitle" required></div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div class="form-group"><label>Precio / Noche ($)</label><input type="number" id="newPrice" required></div>
@@ -171,7 +177,7 @@
                 </div>
                 <div class="form-group"><label>Ubicación</label><input type="text" id="newLocation" required></div>
                 <div class="form-group">
-                    <label>Estado Inicial</label>
+                    <label>Estatus Operativo</label>
                     <select id="newStatus">
                         <option value="disponible">Disponible</option>
                         <option value="reservado">Reservado (Bloqueado)</option>
@@ -179,9 +185,9 @@
                     </select>
                 </div>
                 <div class="form-group"><label>URL de Imagen</label><input type="text" id="newImage" required placeholder="https://..."></div>
-                <div class="form-group"><label>Fechas Ocupadas (Bloqueadas Ej: 2026-10-01 a 2026-10-05)</label><input type="text" id="newBlockedDates" placeholder="YYYY-MM-DD to YYYY-MM-DD"></div>
                 <div class="form-group"><label>Descripción</label><input type="text" id="newDesc" required></div>
-                <button type="submit" class="submit-btn">Guardar en la Nube</button>
+                <button type="submit" id="submitFormBtn" class="submit-btn">Guardar en la Nube</button>
+                <button type="button" id="cancelEditBtn" onclick="resetForm()" style="display:none; width:100%; background:#27272a; color:#fff; border:none; padding:10px; border-radius:12px; margin-top:8px; cursor:pointer; font-weight:700;">Cancelar Edición</button>
             </form>
         </div>
     </section>
@@ -222,8 +228,7 @@
                         location: "Lechería",
                         status: "disponible",
                         image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800",
-                        desc: "Muelle privado, planta eléctrica total.",
-                        bookedDates: [] // Lista de rangos reservados
+                        desc: "Muelle privado, planta eléctrica total."
                     }];
                     dbRef.set(properties);
                 }
@@ -260,8 +265,12 @@
                         </div>
                         <div class="card-footer">
                             <button onclick="abrirModalReserva(${prop.id})" class="reserve-btn" ${isDisabled ? 'disabled' : ''}>
-                                <i class="fa-brands fa-whatsapp"></i> ${isDisabled ? 'No Disponible' : 'Reservar / Cotizar'}
+                                <i class="fa-brands fa-whatsapp"></i> ${isDisabled ? 'Inmueble No Disponible' : 'Reservar / Cotizar'}
                             </button>
+                            <div class="admin-action-btns solo-admin" style="display: none;">
+                                <button onclick="editarPropiedad(${prop.id})" class="edit-btn"><i class="fa-solid fa-pen"></i> Editar</button>
+                                <button onclick="eliminarPropiedad(${prop.id})" class="delete-btn"><i class="fa-solid fa-trash"></i> Borrar</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -272,7 +281,7 @@
 
         function abrirModalReserva(id) {
             propiedadSeleccionada = properties.find(p => p.id === id);
-            document.getElementById('modalPropertyTitle').innerText = `Reservar: ${propiedadSeleccionada.title}`;
+            document.getElementById('modalPropertyTitle').innerText = `Cotizar: ${propiedadSeleccionada.title}`;
             document.getElementById('bookingModal').style.display = 'flex';
         }
 
@@ -307,31 +316,89 @@
             const noches = Math.ceil((checkOutDateObj - checkInDateObj) / (1000 * 60 * 60 * 24));
             const totalUSD = noches * propiedadSeleccionada.price;
 
-            // Cambiar estado a reservado automáticamente en Firebase
-            propiedadSeleccionada.status = "reservado";
-            dbRef.set(properties);
-
-            let mensaje = `Hola, deseo confirmar reserva en "${propiedadSeleccionada.title}".\n📅 Entrada: ${checkIn}\n📅 Salida: ${checkOut} (${noches} noches).\n👥 Huéspedes: ${adultos} Adultos, ${ninos} Niños, ${mascotas} Mascotas.\n💰 Total Est.: $${totalUSD} USD.`;
+            // NOTA: Ya NO cambia el estatus automáticamente. Solo arma el mensaje para WhatsApp.
+            let mensaje = `Hola, deseo cotizar / reservar "${propiedadSeleccionada.title}".\n📅 Entrada: ${checkIn}\n📅 Salida: ${checkOut} (${noches} noches).\n👥 Huéspedes: ${adultos} Adultos, ${ninos} Niños, ${mascotas} Mascotas.\n💰 Total Est.: $${totalUSD} USD.`;
             window.open(`https://wa.me/584248901954?text=${encodeURIComponent(mensaje)}`, '_blank');
             cerrarModalReserva();
         }
 
         function handlePropertySubmit(event) {
             event.preventDefault();
-            const nuevaProp = {
-                id: Date.now(),
-                title: document.getElementById('newTitle').value,
-                price: parseFloat(document.getElementById('newPrice').value),
-                capacity: parseInt(document.getElementById('newCapacity').value),
-                location: document.getElementById('newLocation').value,
-                status: document.getElementById('newStatus').value,
-                image: document.getElementById('newImage').value,
-                desc: document.getElementById('newDesc').value
-            };
-            properties.unshift(nuevaProp);
+            const editId = document.getElementById('editPropertyId').value;
+
+            let title = document.getElementById('newTitle').value;
+            let price = parseFloat(document.getElementById('newPrice').value);
+            let capacity = parseInt(document.getElementById('newCapacity').value);
+            let location = document.getElementById('newLocation').value;
+            let status = document.getElementById('newStatus').value;
+            let image = document.getElementById('newImage').value;
+            let desc = document.getElementById('newDesc').value;
+
+            if (editId) {
+                const prop = properties.find(p => p.id == editId);
+                if (prop) {
+                    prop.title = title;
+                    prop.price = price;
+                    prop.capacity = capacity;
+                    prop.location = location;
+                    prop.status = status;
+                    prop.image = image;
+                    prop.desc = desc;
+                }
+                alert("¡Inmueble actualizado en la nube con éxito!");
+            } else {
+                const nuevaProp = {
+                    id: Date.now(),
+                    title: title,
+                    price: price,
+                    capacity: capacity,
+                    location: location,
+                    status: status,
+                    image: image,
+                    desc: desc
+                };
+                properties.unshift(nuevaProp);
+                alert("¡Inmueble publicado en la nube con éxito!");
+            }
+
             dbRef.set(properties);
-            alert("¡Inmueble y gestión de reservas actualizados en la nube!");
+            resetForm();
+        }
+
+        function editarPropiedad(id) {
+            const prop = properties.find(p => p.id === id);
+            if (!prop) return;
+
+            document.getElementById('editPropertyId').value = prop.id;
+            document.getElementById('newTitle').value = prop.title;
+            document.getElementById('newPrice').value = prop.price;
+            document.getElementById('newCapacity').value = prop.capacity;
+            document.getElementById('newLocation').value = prop.location;
+            document.getElementById('newStatus').value = prop.status || "disponible";
+            document.getElementById('newImage').value = prop.image;
+            document.getElementById('newDesc').value = prop.desc;
+
+            document.getElementById('formMainTitle').innerText = "Editar Propiedad Existente";
+            document.getElementById('submitFormBtn').innerText = "Guardar Cambios";
+            document.getElementById('cancelEditBtn').style.display = "block";
+
+            window.location.hash = '#admin';
+        }
+
+        function resetForm() {
             document.getElementById('addPropertyForm').reset();
+            document.getElementById('editPropertyId').value = "";
+            document.getElementById('formMainTitle').innerText = "Publicar Propiedad";
+            document.getElementById('submitFormBtn').innerText = "Guardar在新 la Nube";
+            document.getElementById('submitFormBtn').innerText = "Guardar en la Nube";
+            document.getElementById('cancelEditBtn').style.display = "none";
+        }
+
+        function eliminarPropiedad(id) {
+            if (confirm("¿Estás seguro de eliminar este inmueble?")) {
+                properties = properties.filter(p => p.id !== id);
+                dbRef.set(properties);
+            }
         }
 
         function activarAdmin() {
@@ -340,12 +407,16 @@
                 localStorage.setItem("admin_active", "true");
                 verificarEstadoAdmin();
                 alert("Modo Administrador Activo");
+            } else if (pass !== null) {
+                alert("Contraseña incorrecta.");
             }
         }
 
         function verificarEstadoAdmin() {
             const activo = localStorage.getItem("admin_active") === "true";
-            document.querySelectorAll('.solo-admin').forEach(el => el.style.display = activo ? (el.tagName === 'SECTION' ? 'block' : 'flex') : 'none');
+            document.querySelectorAll('.solo-admin').forEach(el => {
+                el.style.display = activo ? (el.tagName === 'SECTION' ? 'block' : 'flex') : 'none';
+            });
         }
     </script>
 </body>
